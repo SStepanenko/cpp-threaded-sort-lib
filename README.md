@@ -10,7 +10,7 @@ I heard a lot (and jokes too :-) ) about such a popular test task for programmer
 
 Threads manager can't delete just completed threads, attempt to do it causes errors and threads are terminated with code 3. All threads created by algorithm are put to list of completed threads. Problem should be investigated and resolved otherwise it will be impossible to sort big arrays because of system resources limitation.
   
-## Thoughts of algorithm optimization
+## Algorithm enhancement
 
 * Think how algorithm can be enhanced. 
 Algorithm should analyze whether it is worth to execute quicksort for part of array in new thread or it is better to call function recursively (depth of recursion should be controlled). Or may be for sorting small parts of array other sorting algorithms are more effective and should be used instead of quicksort algorithm. Think about other ways of optimization… 
