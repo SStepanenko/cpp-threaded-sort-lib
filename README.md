@@ -17,7 +17,7 @@ Algorithm should analyze whether it is worth to execute quicksort for part of ar
 
 * Current version sorts only std::vector<T> in ascending order.
     Implementation should be modified to support this prototype:
-        template<class RandomIt, class Compare>
+        template < class RandomIt, class Compare >
         void sort(RandomIt first, RandomIt last, Compare comp);
 
 ## Folders Structure
