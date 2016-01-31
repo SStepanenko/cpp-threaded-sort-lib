@@ -22,8 +22,8 @@ Algorithm should analyze whether it is worth to execute quicksort for part of ar
 
 ## Folders Structure
 
-* Project of threaded_sort library: threaded_sort/threaded_sort
-* Project of library tests: threaded_sort/threaded_sort_test
+* Project of threaded_sort library: threaded_sort/threaded_sort.
+* Project of library tests: threaded_sort/threaded_sort_test.
 To execute unit tests put the folder 3rd_party_libs with headers and built googletest libraries to the folder of this reposotory. You can take 3rd_party_libs folder from here:
 https://github.com/SStepanenko/my-cpp-test-tasks/tree/master/3rd_party_libs
 Or you can download and build googletest library by yourself.
