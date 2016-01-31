@@ -4,7 +4,7 @@ My C++ implementation of threaded quicksort algorithm. Project is implemented in
 
 I heard a lot (and jokes too :-) ) about such a popular test task for programmers as a multi-threaded implementation of quicksort algorithm and I decided to try to implement it by myself. This is just a first implementation, may be not so quick and not optimal but it works (for not very big arrays).
 
-**Coding style:** http://source.android.com/source/code-style.html
+**Coding style:**  [JSF-AV rules](http://www.stroustrup.com/JSF-AV-rules.pdf)
 
 ## Not solved problems
 
@@ -13,7 +13,7 @@ Threads manager can't delete just completed threads, attempt to do it causes err
 ## Thoughts of algorithm optimization
 
 * Think how algorithm can be enhanced. 
-Algorithm should analyze whether it is worth to execute quicksort for part of array in new thread or it is better to call function recursively (depth of recursion should be controlled). Or may be for sorting small parts of array other sorting algorithms are more effective and should be used instead of quicksort algorithm. Think about other ways of optimization… 
+Algorithm should analyze whether it is worth to execute quicksort for part of array in new thread or it is better to call function recursively (depth of recursion should be controlled). Or may be for sorting small parts of array other sorting algorithms are more effective and should be used instead of quicksort algorithm. Think about other ways of optimizationâ€¦ 
 
 * Current version sorts only std::vector<T> in ascending order.
     Implementation should be modified to support this prototype:
