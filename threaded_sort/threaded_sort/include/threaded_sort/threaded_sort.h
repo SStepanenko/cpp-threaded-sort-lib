@@ -22,14 +22,19 @@ class Threaded_sort
 {
 public:
 
+  // Default maximum recursion depth.
+  static const int32_t s_default_max_recursion_depth = 15;
+
   /// @brief Implements threaded quick sort algorithm.
   /// @param <T> Type of elements in vector.
   /// @param vector Reference to vector which should be sorted.
+  /// @param max_recursion_depth Maximum recursion depth (should be positive value).
+  /// @exception invalid_argument Invalid value of max_recursion_depth.
   /// @exception bad_alloc
   /// @exception system_error
   /// @exception exception 
   template<class T>
-  static void quick_sort(std::vector<T>& input_vector);
+  static void quick_sort(std::vector<T>& input_vector, int32_t max_recursion_depth = s_default_max_recursion_depth);
 
 private:
 
@@ -44,8 +49,13 @@ private:
 };
 
 template<class T>
-void Threaded_sort::quick_sort(std::vector<T>& input_vector)
+void Threaded_sort::quick_sort(std::vector<T>& input_vector, int32_t max_recursion_depth)
 {
+  if (max_recursion_depth < 0)
+  {
+    throw invalid_argument("max_recursion_depth");
+  }
+
   if (input_vector.size() < 2)
   {
     return;
@@ -56,7 +66,7 @@ void Threaded_sort::quick_sort(std::vector<T>& input_vector)
 
   // Create top level quick sort asynchronous task.
   shared_ptr<Sort_async_task<T>> sort_async_task = make_shared<Sort_async_task<T>>(input_vector, 0,
-    input_vector.size() - 1, tasks_manager); // exception
+    input_vector.size() - 1, max_recursion_depth, tasks_manager); // exception
 
   // Add task to tasks manager.
   tasks_manager->add_task(sort_async_task);

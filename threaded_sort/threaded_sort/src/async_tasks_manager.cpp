@@ -34,6 +34,13 @@ void Async_tasks_manager::add_task(const shared_ptr<Async_task>& async_task)
   m_active_tasks_map[async_task->get_task_id()] = async_task; // exception
 }
 
+int32_t Async_tasks_manager::active_tasks_count()
+{
+  lock_guard<mutex> lock(m_common_mutex);
+
+  return m_active_tasks_map.size();
+}
+
 shared_ptr<exception> Async_tasks_manager::get_error()
 {
   lock_guard<mutex> lock(m_common_mutex);
@@ -56,10 +63,9 @@ void Async_tasks_manager::handle_task_completion(int32_t task_id, const std::sha
 
   try
   {
-    // ToDo: clearing of completed tasks causes abnormal termination.
-    // Problem must be solved!
-    // Clear completed tasks.
-    //m_completed_tasks_list.clear();       
+    // Join completed tasks (which can be joined) and remove them. 
+    // Otherwise deleting of completed tasks causes error!
+    _join_and_remove_completed_tasks_which_can_be_joined(); // exception
 
     // Find task by ID.
     auto& task_iterator = m_active_tasks_map.find(task_id);
@@ -113,18 +119,25 @@ void Async_tasks_manager::wait_for_all_tasks_completion()
   {
     m_completion_condition_variable.wait(lock);
   }
-
-  // ToDo: removing completed tasks causes abnormal termination.
-  // Problem must be solved!
-  //remove_tasks();
 }
 
-void Async_tasks_manager::remove_tasks()
+void Async_tasks_manager::_join_and_remove_completed_tasks_which_can_be_joined()
 {
-  lock_guard<mutex> lock(m_common_mutex);
+  // Join threads of completed tasks (which can be joined) and remove them. 
+  // Otherwise deleting of completed tasks causes error!
+  for (auto iterator = m_completed_tasks_list.begin(); iterator != m_completed_tasks_list.end();)
+  {
+    if ((*iterator)->get_thread().joinable())
+    {
+      (*iterator)->get_thread().join(); // exception 
 
-  m_active_tasks_map.clear();
-  m_completed_tasks_list.clear();
+      iterator = m_completed_tasks_list.erase(iterator);
+    }
+    else
+    {
+      iterator++;
+    }
+  } // for
 }
 
 void Async_tasks_manager::_check_completion_condition()

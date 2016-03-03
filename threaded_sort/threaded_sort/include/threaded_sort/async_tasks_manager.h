@@ -31,7 +31,10 @@ public:
   /// @brief Adds asynchronous task (bot doesn't start it).
   /// @param async_task New asynchronous task (should be not null).
   /// @exception bad_alloc
-  void add_task(const std::shared_ptr<Async_task>& async_task);  
+  void add_task(const std::shared_ptr<Async_task>& async_task);
+
+  /// @brief Gets count of active tasks.
+  int32_t active_tasks_count();
 
   /// @brief Gets exception occurred on some task execution.
   ///        If no errors occurred function returns null.
@@ -44,6 +47,7 @@ public:
   /// @param task_id Asynchronous task identifier.
   /// @param error Error occurred on task execution or null if task completed successfully.
   /// @exception bad_alloc
+  /// @exception system_error
   void handle_task_completion(int32_t task_id, const std::shared_ptr<std::exception>& error);
 
   /// @brief Checks if all tasks are completed.
@@ -51,9 +55,6 @@ public:
 
   /// @brief Waits for all tasks completion.
   void wait_for_all_tasks_completion();
-
-  /// @brief Removes all tasks (should be called when all tasks are completed).
-  void remove_tasks();
 
 private:
 
@@ -64,6 +65,10 @@ private:
 
   // Private assignment operator without implementation to prohibit using it.
   Async_tasks_manager& operator=(const Async_tasks_manager&);
+
+  /// @brief Joins threads of completed tasks (which can be joined) and removes them.
+  /// @exception system_error
+  void _join_and_remove_completed_tasks_which_can_be_joined();
 
   /// @brief Checks all tasks completion condition and signals if it is true.
   void _check_completion_condition();  

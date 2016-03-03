@@ -20,23 +20,46 @@ namespace My_cpp_libs
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <class T>
-class Sort_async_task final: public Async_task
+class Sort_async_task final : public Async_task
 {
 public:
 
   /// @brief Constructor.
   /// @param <T> Type of elements in vector.
   /// @param vector Reference to vector which should be sorted.
+  /// @param max_recursion_depth Maximum recursion depth (should be positive value).
   /// @param left Index of element from which sorting range is started.
   /// @param right Index of element which encloses sorting range.
   /// @param tasks_manager Asynchronous tasks manager.
   Sort_async_task(std::vector<T>& vector, int32_t left, int32_t right,
-    std::shared_ptr<Async_tasks_manager> tasks_manager);
+    int32_t max_recursion_depth, std::shared_ptr<Async_tasks_manager> tasks_manager);
 
   /// @brief Destructor.
   virtual ~Sort_async_task();
 
 private:
+
+  // Nested classes.
+
+  /// @brief Class which increments passed by reference variable in constructor and decrements in destructor.
+  class Auto_incrementer final
+  {
+  public:
+
+    Auto_incrementer(int32_t& counter) : m_counter(counter)
+    {
+      counter++;
+    }
+
+    ~Auto_incrementer()
+    {
+      m_counter--;
+    }
+
+  private:
+
+    int32_t& m_counter;
+  }; // class Auto_incrementer
 
   // Private methods.
 
@@ -61,9 +84,13 @@ private:
   void _start_new_sort_async_task(const int32_t left, const int32_t right);
 
   /// @brief Implements quick sort algorithm.
+  /// @param left Index of element from which sorting range is started.
+  /// @param right Index of element which encloses sorting range.
   /// @exception std::bad_alloc
   /// @exception std::system_error
-  void _quick_sort();  
+  void _quick_sort(const int32_t left, const int32_t right);
+
+  // Private static constants.
 
   // Private fields.
 
@@ -76,8 +103,14 @@ private:
   // Index of element which encloses sorting range.
   const int32_t m_right;
 
+  // Maximum depth of recursion.
+  const int32_t m_max_recursion_depth;
+
   // Asynchronous tasks manager.
   std::shared_ptr<Async_tasks_manager> m_tasks_manager;
+
+  // Current level of recursion.
+  int32_t m_recursion_level;
 }; // class Sort_async_task
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -86,15 +119,18 @@ private:
 
 template<class T>
 Sort_async_task<T>::Sort_async_task(std::vector<T>& vector, int32_t left, int32_t right,
-  std::shared_ptr<Async_tasks_manager> tasks_manager) : 
+  int32_t max_recursion_depth, std::shared_ptr<Async_tasks_manager> tasks_manager) : 
     m_vector(vector),
     m_left(left),
     m_right(right),
-    m_tasks_manager(tasks_manager)
+    m_max_recursion_depth(max_recursion_depth),
+    m_tasks_manager(tasks_manager),
+    m_recursion_level(0)
 {
   assert(left >= 0 && left < static_cast<int32_t>(vector.size()));
   assert(right >= 0 && right < static_cast<int32_t>(vector.size()));
   assert(left < right);
+  assert(max_recursion_depth >= 0);
   assert(tasks_manager != nullptr);
 }
 
@@ -110,7 +146,7 @@ void Sort_async_task<T>::_do_in_background()
 
   try
   {   
-    _quick_sort(); // exception
+    _quick_sort(m_left, m_right); // exception
   }
   catch (std::exception& error)
   {
@@ -147,7 +183,7 @@ void Sort_async_task<T>::_start_new_sort_async_task(const int32_t left, const in
   assert(left < right);
 
   std::shared_ptr<Async_task> sort_async_task = std::make_shared<Sort_async_task>(m_vector, left, right,
-    m_tasks_manager); // exception
+    m_max_recursion_depth, m_tasks_manager); // exception
 
   m_tasks_manager->add_task(sort_async_task); // exception
 
@@ -155,26 +191,28 @@ void Sort_async_task<T>::_start_new_sort_async_task(const int32_t left, const in
 }
 
 template<class T>
-void Sort_async_task<T>::_quick_sort()
-{  
+void Sort_async_task<T>::_quick_sort(const int32_t left, const int32_t right)
+{ 
+  Auto_incrementer recursion_level_incrementer(m_recursion_level);
+
   if(m_tasks_manager->is_error_occurred())
   {
     return;
   }
 
-  assert(m_left >= 0 && m_left < static_cast<int32_t>(m_vector.size()));
-  assert(m_right >= 0 && m_right < static_cast<int32_t>(m_vector.size()));
-  assert(m_left < m_right);
+  assert(left >= 0 && left < static_cast<int32_t>(m_vector.size()));
+  assert(right >= 0 && right < static_cast<int32_t>(m_vector.size()));
+  assert(left < right);
 
-  int32_t i = m_left;
-  int32_t j = m_right;
+  int32_t i = left;
+  int32_t j = right;
 
-  T comparand = m_vector[(m_left + m_right) / 2];
+  T comparand = m_vector[(left + right) / 2];
 
   do
   {
-    while (m_vector[i] < comparand && i < m_right) i++;
-    while (comparand < m_vector[j] && j > m_left) j--;
+    while (m_vector[i] < comparand && i < right) i++;
+    while (comparand < m_vector[j] && j > left) j--;
 
     if (i <= j)
     {
@@ -186,14 +224,28 @@ void Sort_async_task<T>::_quick_sort()
 
   assert(j < i);
 
-  if (m_left < j)
+  if (left < j)
   {
-    _start_new_sort_async_task(m_left, j); // exception
+    if (m_recursion_level <= m_max_recursion_depth)
+    {
+      _quick_sort(left, j); // exception
+    }
+    else
+    {
+      _start_new_sort_async_task(left, j); // exception
+    }
   }
 
-  if (i < m_right)
+  if (i < right)
   {
-    _start_new_sort_async_task(i, m_right); // exception
+    if (m_recursion_level <= m_max_recursion_depth)
+    {
+      _quick_sort(i, right); // exception
+    }
+    else
+    {
+      _start_new_sort_async_task(i, right); // exception
+    }
   }
 }
 
