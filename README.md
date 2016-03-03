@@ -7,7 +7,7 @@ My C++ implementation of threaded quicksort algorithm. Project is implemented in
 ## Algorithm description
 
 Quicksort algorithm is recursive by it's nature and my implementation combines recursion and execution of algorithm in separate thread.
-Algorithm accepts input parameter "maximum depth of recursion" and when this constraint is reached then sorting of next fragment of array is executed in new thread.
+Algorithm accepts input parameter "maximum recursion depth" and when this constraint is reached then sorting of next fragment of array is executed in new thread.
 
 ## Ideas of how algorithm can be enhanced
 
